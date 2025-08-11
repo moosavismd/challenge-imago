@@ -1,0 +1,14 @@
+---
+# Common variables for ALL hosts
+ansible_python_interpreter: /usr/bin/python3
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+# Role execution control (defaults)
+install_pre_install: true
+install_zabbix: true
+
+# Zabbix Agent Configuration
+agent_param_server: "37.32.25.44"
+agent_param_serveractive: "37.32.25.44"
+agent_param_hostname: "{{ inventory_hostname }}"
+agent_param_listenport: 10050

@@ -1,0 +1,29 @@
+---
+# Docker configuration
+docker_version: "latest"  # Can be "latest" or specific version like "24.0.5"
+docker_install_method: "docker-ce"  # Installation method
+docker_repository_url: "https://download.docker.com/linux/ubuntu"
+docker_gpg_key_url: "https://download.docker.com/linux/ubuntu/gpg"
+install_docker_compose: true
+docker_compose_package_name: docker-compose-plugin
+
+# Package management
+update_package_cache: true
+apt_cache_valid_time: 3600  # seconds; avoid update if cache is fresh
+upgrade_packages: false
+reboot_after_upgrade: false
+reboot_timeout: 600
+
+# Common packages to install
+common_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - software-properties-common
+
+# DNS configuration
+configure_dns: false
+dns_nameservers:
+  - "185.206.92.250"

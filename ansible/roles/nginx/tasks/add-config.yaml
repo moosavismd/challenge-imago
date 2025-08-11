@@ -1,0 +1,8 @@
+---
+# Add config task
+- name: Deploy NGINX virtual host configurations
+  template:
+    src: nginx_vhost.conf.j2
+    dest: "{{ base_nginx_conf_dir }}/{{ item.server_name }}.conf"
+  with_items: "{{ nginx_vhosts }}"
+  notify: reload nginx

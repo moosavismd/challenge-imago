@@ -1,0 +1,10 @@
+---
+# NGINX role handlers
+
+- name: reload nginx
+  community.docker.docker_container_exec:
+    container: "{{ nginx_container_name }}"
+    command: nginx -s reload
+  listen: "reload nginx"
+
+

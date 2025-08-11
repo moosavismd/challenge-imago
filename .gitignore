@@ -1,0 +1,6 @@
+# Editors/IDE
+.vscode/
+
+# Local editor schemas (optional, not needed in repo)
+ansible/.schemas/
+

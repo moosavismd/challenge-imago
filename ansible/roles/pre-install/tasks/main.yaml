@@ -1,0 +1,28 @@
+---
+# Pre-install role tasks
+- name: Update package cache
+  apt:
+    update_cache: "{{ update_package_cache }}"
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+  when: update_package_cache
+
+- name: Upgrade OS packages
+  apt:
+    upgrade: "{{ apt_upgrade_mode | default('yes') }}"
+  when: upgrade_packages and ansible_pkg_mgr == 'apt'
+  notify: reboot system
+
+- name: Install common packages
+  apt:
+    name: "{{ common_packages }}"
+    state: present
+  when: common_packages | length > 0
+
+- name: Include DNS configuration tasks
+  include_tasks: dns-setter.yaml
+  when: configure_dns
+
+# Include Docker installation tasks
+- name: Include Docker installation tasks
+  include_tasks: docker.yaml
+  when: docker_install_method is defined

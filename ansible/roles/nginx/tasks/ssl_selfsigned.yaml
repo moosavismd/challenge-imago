@@ -1,0 +1,22 @@
+---
+# SSL self-signed tasks
+
+# Generate self-signed certificates for all domains
+- name: Generate private keys for domains
+  community.crypto.openssl_privatekey:
+    path: "{{ base_ssl_dir }}/{{ item.server_name }}/privkey.pem"
+    size: 2048
+  loop: "{{ nginx_vhosts }}"
+  when: nginx_vhosts | length > 0
+
+- name: Generate self-signed certificates for domains
+  community.crypto.x509_certificate:
+    path: "{{ base_ssl_dir }}/{{ item.server_name }}/fullchain.pem"
+    privatekey_path: "{{ base_ssl_dir }}/{{ item.server_name }}/privkey.pem"
+    provider: selfsigned
+    selfsigned_version: 3
+    selfsigned_digest: sha256
+    selfsigned_not_after: +3650d
+  loop: "{{ nginx_vhosts }}"
+  when: nginx_vhosts | length > 0
+

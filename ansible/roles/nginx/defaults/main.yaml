@@ -1,0 +1,26 @@
+---
+# NGINX role defaults
+
+# SSL Configuration
+ssl_type: "selfsigned"  # only selfsigned available
+
+# NGINX Container Configuration
+nginx_image: "nginx:latest"
+nginx_container_name: "nginx"
+nginx_network_mode: "host"  # Use host networking for localhost access
+
+# Base Directory Configuration
+base_ssl_dir: "/etc/nginx/ssl"
+base_nginx_conf_dir: "/etc/nginx/conf.d"
+
+# NGINX volumes (using base paths)
+nginx_volumes:
+  - "{{ base_nginx_conf_dir }}:/etc/nginx/conf.d:ro"
+  - "{{ base_ssl_dir }}:/etc/nginx/ssl:ro"
+
+# API Proxy Configuration - List of APIs to proxy
+nginx_vhosts:
+  # Example structure:
+  # - server_name: "api.example.com"
+  #   backend_url: "http://localhost:8000"  # Your API backend URL
+  #   ssl_type: "selfsigned"

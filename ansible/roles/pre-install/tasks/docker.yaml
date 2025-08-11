@@ -1,0 +1,48 @@
+---
+# Docker installation tasks
+- name: Add Docker GPG key
+  apt_key:
+    url: "{{ docker_gpg_key_url }}"
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] {{ docker_repository_url }} {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+  notify: apt update cache
+
+- name: Flush handlers to update APT cache if repo changed
+  meta: flush_handlers
+
+- name: Install Docker CE (latest)
+  apt:
+    name: 
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+    state: present
+  when: docker_version == "latest"
+
+- name: Install specific Docker CE version
+  apt:
+    name: 
+      - "docker-ce={{ docker_version }}"
+      - "docker-ce-cli={{ docker_version }}"
+      - containerd.io
+      - docker-buildx-plugin
+    state: present
+  when: docker_version != "latest"
+
+- name: Install Docker Compose plugin (conditional)
+  apt:
+    name: "{{ docker_compose_package_name }}"
+    state: present
+  when: install_docker_compose
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes

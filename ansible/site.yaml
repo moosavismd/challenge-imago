@@ -1,0 +1,17 @@
+---
+- name: Site playbook for server setup
+  hosts: all
+  become: yes
+  tags: [always]
+  roles:
+    - role: pre-install
+      when: install_pre_install | default(false)
+    - role: zabbix.zabbix.agent
+      when: install_zabbix | default(false)
+
+- name: NGINX reverse proxy setup
+  hosts: webservers
+  become: yes
+  tags: [nginx, webservers]
+  roles:
+    - nginx

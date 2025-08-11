@@ -1,0 +1,55 @@
+---
+# NGINX role tasks
+
+- name: Ensure necessary directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ base_nginx_conf_dir }}"
+    - "{{ base_ssl_dir }}"
+
+# Create SSL directories for each domain
+- name: Create SSL directories for each domain
+  file:
+    path: "{{ base_ssl_dir }}/{{ item.server_name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ nginx_vhosts }}"
+  when: nginx_vhosts | length > 0
+
+# Run NGINX container with host networking
+- name: Run NGINX container
+  community.docker.docker_container:
+    name: "{{ nginx_container_name }}"
+    image: "{{ nginx_image }}"
+    restart_policy: always
+    state: started
+    network_mode: "{{ nginx_network_mode }}"
+    volumes: "{{ nginx_volumes }}"
+    command: ["nginx", "-g", "daemon off;"]
+
+- name: Deploy default server config for NGINX
+  copy:
+    src: default_server.conf
+    dest: "{{ base_nginx_conf_dir }}/default_server.conf"
+    mode: '0644'
+  notify: reload nginx
+
+# Deploy virtual host configurations if provided
+- name: Deploy virtual host configurations
+  include_tasks: add-config.yaml
+  when: nginx_vhosts | length > 0
+
+# Generate self-signed SSL certificates
+- name: Handle SSL generation
+  include_tasks: ssl_selfsigned.yaml
+
+# Apply SSL security hardening
+- name: Apply SSL hardening configuration
+  include_tasks: ssl_hardening.yaml
