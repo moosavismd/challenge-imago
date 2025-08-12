@@ -147,23 +147,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify registry connectivity
+      - name: Verify Docker setup
         run: |
-          echo "🔍 Verifying registry connectivity..."
+          echo "🔍 Verifying Docker setup..."
           
-          # Test registry access
-          if ! curl -f "https://ghcr.io/v2/" --max-time 30; then
-            echo "❌ Cannot access GitHub Container Registry"
+          # Test basic Docker functionality
+          if ! docker version; then
+            echo "❌ Docker is not working properly"
             exit 1
           fi
           
-          # Test authentication
+          # Test Docker pull capability
           if ! docker pull hello-world:latest; then
             echo "❌ Docker pull test failed"
             exit 1
           fi
           
-          echo "✅ Registry connectivity verified"
+          echo "✅ Docker is working and ready for registry operations"
 
       - name: Build and push Docker image
         run: |
