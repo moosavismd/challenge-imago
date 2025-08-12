@@ -22,7 +22,7 @@ def random_number():
 def constant_number():
     """Return the constant number 17"""
     return jsonify({
-        'number': 22,
+        'number': 17,
         'endpoint': '/cons'
     })
 
