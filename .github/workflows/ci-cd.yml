@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 env:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
