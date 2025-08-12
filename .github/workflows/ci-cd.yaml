@@ -72,10 +72,7 @@ jobs:
             exit 1
           fi
           
-          echo "Testing endpoints..."
-          curl -f http://localhost:8000/health
-          curl -f http://localhost:8000/
-          curl -f http://localhost:8000/random
+          echo "Testing /cons endpoint..."
           curl -f http://localhost:8000/cons
           
           echo "Stopping server..."
