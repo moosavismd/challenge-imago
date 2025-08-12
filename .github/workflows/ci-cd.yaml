@@ -41,22 +41,55 @@ jobs:
       - name: Test API endpoints
         run: |
           cd api-service
+          echo "Starting API server..."
           python api-server.py &
-          sleep 5
+          API_PID=$!
+          
+          echo "Waiting for server to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/health >/dev/null 2>&1; then
+              echo "Server is ready!"
+              break
+            fi
+            echo "Attempt $i/30: Server not ready yet..."
+            sleep 2
+          done
+          
+          echo "Testing endpoints..."
           curl -f http://localhost:8000/health
           curl -f http://localhost:8000/
           curl -f http://localhost:8000/random
           curl -f http://localhost:8000/cons
-          pkill -f api-server.py
+          
+          echo "Stopping server..."
+          kill $API_PID
+          wait $API_PID 2>/dev/null || true
 
       - name: Test Docker build
         run: |
           cd api-service
+          echo "Building Docker image..."
           docker build -t test-media-service .
+          
+          echo "Starting container..."
           docker run -d --name test-container -p 8001:8000 test-media-service
-          sleep 5
+          
+          echo "Waiting for container to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8001/health >/dev/null 2>&1; then
+              echo "Container is ready!"
+              break
+            fi
+            echo "Attempt $i/30: Container not ready yet..."
+            sleep 2
+          done
+          
+          echo "Testing container health..."
           curl -f http://localhost:8001/health
-          docker stop test-container && docker rm test-container
+          
+          echo "Cleaning up..."
+          docker stop test-container
+          docker rm test-container
 
   build:
     runs-on: ubuntu-latest
