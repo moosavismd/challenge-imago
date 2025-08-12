@@ -12,8 +12,8 @@ permissions:
   id-token: write
 
 env:
-  SERVER_A_IP: "37.32.15.192"
-  SERVER_B_IP: "188.121.102.61"
+  SERVER_A_IP: "188.121.100.34"
+  SERVER_B_IP: "188.121.101.145"
   DEPLOY_AGENT_PORT: "8080"
 
 jobs:

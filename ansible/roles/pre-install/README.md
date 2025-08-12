@@ -22,3 +22,9 @@ Prepares system with Docker and common packages.
 - `main.yaml`: Main pre-installation tasks
 - `dns-setter.yaml`: DNS configuration tasks
 - `docker.yaml`: Docker installation tasks
+
+## Usage
+```bash
+# Deploy complete infrastructure
+ansible-playbook -i inventories/hosts site.yaml --ask-vault-password
+```

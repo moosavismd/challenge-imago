@@ -44,12 +44,11 @@ pip install docker pyyaml cryptography
 
 ```bash
 # Deploy complete infrastructure
-ansible-playbook -i inventories/hosts site.yaml --skip-tags verify
+ansible-playbook -i inventories/hosts site.yaml --ask-vault-password
 
 # Deploy and configure Nginx
-ansible-playbook -i inventories/hosts site.yaml -t nginx
-
+ansible-playbook -i inventories/hosts site.yaml -t nginx --ask-vault-password
 
 # Deploy Deployer agent
-ansible-playbook -i inventories/hosts site.yaml --skip-tags verify -t deploy-agent
+ansible-playbook -i inventories/hosts site.yaml --skip-tags verify -t deploy-agent --ask-vault-password
 ```

@@ -25,5 +25,5 @@ Sets up NGINX reverse proxy with SSL termination.
 
 ```bash
 # Deploy complete infrastructure
-ansible-playbook -i inventories/hosts site.yaml
+ansible-playbook -i inventories/hosts site.yaml --ask-vault-password
 ```

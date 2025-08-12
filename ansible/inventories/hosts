@@ -1,10 +1,6 @@
-[all:vars]
-ansible_user=ubuntu
-ansible_ssh_private_key_file=~/.ssh/id_rsa
-ansible_python_interpreter=/usr/bin/python3
-ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
-
+[all:children]
+webservers
 
 [webservers]
-server-a ansible_host=37.32.15.192
-server-b ansible_host=188.121.102.61
+server-a ansible_host=188.121.100.34
+server-b ansible_host=188.121.101.145

@@ -27,5 +27,5 @@ Deploys lightweight deployment agent for CI/CD.
 
 ```bash
 # Deploy complete infrastructure
-ansible-playbook -i inventories/hosts site.yaml
+ansible-playbook -i inventories/hosts site.yaml --ask-vault-password
 ```
