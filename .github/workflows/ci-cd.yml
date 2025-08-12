@@ -86,22 +86,50 @@ jobs:
           # curl is available by default on ubuntu-latest
 
       - name: Deploy to Server A
+        id: deploy-server-a
         run: |
           echo "Deploying to Server A..."
-          curl -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
+          response=$(curl -s -w "\n%{http_code}" -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"image_tag\": \"${{ github.sha }}\"}" \
-            --max-time ${{ env.DEPLOY_TIMEOUT }}
+            --max-time ${{ env.DEPLOY_TIMEOUT }})
+          
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          echo "Server A deployment response: $response_body"
+          echo "Server A HTTP status: $http_code"
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "❌ Server A deployment failed with HTTP $http_code"
+            exit 1
+          else
+            echo "✅ Server A deployment successful"
+          fi
 
       - name: Deploy to Server B
+        id: deploy-server-b
         run: |
           echo "Deploying to Server B..."
-          curl -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
+          response=$(curl -s -w "\n%{http_code}" -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"image_tag\": \"${{ github.sha }}\", \"registry_image\": \"ghcr.io/${{ github.repository }}\"}" \
-            --max-time ${{ env.DEPLOY_TIMEOUT }}
+            --max-time ${{ env.DEPLOY_TIMEOUT }})
+          
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          echo "Server B deployment response: $response_body"
+          echo "Server B HTTP status: $http_code"
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "❌ Server B deployment failed with HTTP $http_code"
+            exit 1
+          else
+            echo "✅ Server B deployment successful"
+          fi
 
       - name: Wait for deployments
         run: |
@@ -111,6 +139,21 @@ jobs:
       - name: Verify deployments
         run: |
           echo "Verifying deployments..."
-          curl -f "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}
-          curl -f "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}
-          echo "Deployment completed successfully!"
+          
+          # Verify Server A
+          echo "Verifying Server A..."
+          if ! curl -f "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}; then
+            echo "❌ Server A verification failed"
+            exit 1
+          fi
+          echo "✅ Server A verification successful"
+          
+          # Verify Server B
+          echo "Verifying Server B..."
+          if ! curl -f "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}; then
+            echo "❌ Server B verification failed"
+            exit 1
+          fi
+          echo "✅ Server B verification successful"
+          
+          echo "🎉 All deployments verified successfully!"
