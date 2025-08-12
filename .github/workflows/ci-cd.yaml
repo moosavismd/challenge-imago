@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master, develop, feature/*, bugfix/* ]
+    branches: [ main, master, cleanup, feature/*, bugfix/* ]
   pull_request:
-    branches: [ main, master, develop, feature/*, bugfix/* ]
+    branches: [ main, master, cleanup, feature/*, bugfix/* ]
 
 permissions:
   contents: read
