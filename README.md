@@ -63,7 +63,7 @@ python api-server.py
 ### Deploy Infrastructure
 ```bash
 cd ansible
-ansible-playbook -i inventories/hosts site.yaml
+ansible-playbook -i inventories/hosts site.yaml --skip-tags verify --ask-vault-password
 ```
 
 ## 🧪 Testing
