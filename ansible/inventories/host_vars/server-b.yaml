@@ -1,10 +1,5 @@
 ---
 # Host-specific variables for server-b
-
-# Role execution control
-install_pre_install: true
-install_zabbix: true
-
 # Pre-install role behavior
 upgrade_packages: true
 reboot_after_upgrade: true

@@ -2,21 +2,53 @@
 
 Media service infrastructure automation.
 
-## Quick Start
+## Package Installation
 
+### Prerequisites
+- Python 3.8+
+- Ansible 2.12+
+
+### Install Required Collections
 ```bash
-ansible-playbook -i inventories/hosts site.yaml
+# Install community.docker and community.crypto collections
+ansible-galaxy collection install community.docker
+ansible-galaxy collection install community.crypto
+
+# Or install from requirements file
+ansible-galaxy collection install -r collections/requirements.yaml
 ```
 
-## Tags
+### Install Dependencies
+```bash
+# Install required Python packages
+pip install -r requirements.txt
 
-- `pre-install` - System preparation
-- `nginx` - NGINX reverse proxy
-- `deploy-agent` - Deployment service
-- `always` - Always run (pre-install, zabbix)
+# Or install manually
+pip install docker pyyaml cryptography
+```
 
-## Structure
+## Variables
 
-- `roles/` - Ansible roles
-- `inventories/` - Server definitions
-- `site.yaml` - Main playbook
+- `install_pre_install`: Install pre-installation packages - boolean: true/false (default: true)
+- `install_zabbix`: Install Zabbix monitoring agent - boolean: true/false (default: true)
+
+## Playbooks
+
+- `site.yaml`: Main playbook for complete infrastructure setup
+
+## Task Files
+
+- `site.yaml`: Main playbook with role execution logic
+
+## Usage
+
+```bash
+# Deploy complete infrastructure
+ansible-playbook -i inventories/hosts site.yaml --ask-vault-password
+
+# Deploy and configure Nginx
+ansible-playbook -i inventories/hosts site.yaml -t nginx --ask-vault-password
+
+# Deploy Deployer agent
+ansible-playbook -i inventories/hosts site.yaml --skip-tags verify -t deploy-agent --ask-vault-password
+```

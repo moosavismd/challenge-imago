@@ -5,3 +5,6 @@
 ansible/.schemas/
 
 .vault_pass
+
+# HAProxy configuration
+haproxy.cfg

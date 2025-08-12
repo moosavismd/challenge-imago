@@ -2,36 +2,30 @@
 
 Deploys lightweight deployment agent for CI/CD.
 
-## Files
-
-All agent files are included in the role:
-- `files/agent.py` - Python Flask application
-- `files/requirements.txt` - Python dependencies
-- `files/Dockerfile` - Container build instructions
-- `files/docker-compose.yaml` - Service definition
-
 ## Variables
 
-- `deploy_agent_dir`: Agent directory
-- `deploy_agent_port`: Agent port (default: 8080)
-- `deploy_agent_token`: Authentication token
-- `build_deploy_agent_image`: Build Docker image on host
+- `project_base_dir`: Base project directory (default: "/opt/media-service")
+- `project_api_dir`: API directory path (default: "/opt/media-service/api")
+- `project_deploy_agent_dir`: Deploy agent directory path (default: "/opt/media-service/deploy-agent")
+- `project_nginx_dir`: NGINX directory path (default: "/opt/media-service/nginx")
+- `deploy_agent_dir`: Deploy agent directory (default: "/opt/media-service/deploy-agent")
+- `deploy_agent_port`: Agent port - numeric value (default: 8080)
+- `deploy_agent_token`: Authentication token - single value (default: "{{ vault_deploy_token }}")
+- `compose_dir`: Docker compose directory (default: "/opt/media-service/api")
+- `deploy_agent_image_name`: Docker image name - single value (default: "deploy-agent")
+- `deploy_agent_image_tag`: Docker image tag - single value (default: "latest")
+- `build_deploy_agent_image`: Build Docker image on host - boolean: true/false (default: false)
+- `registry_image`: Container registry image - single value (default: "ghcr.io/moosavismd/challenge-imago")
+- `registry_username`: Registry username - single value (default: "{{ vault_registry_username }}")
+- `registry_password`: Registry password - single value (default: "{{ vault_registry_password }}")
+
+## Task Files
+
+- `main.yaml`: Main deploy agent setup tasks
 
 ## Usage
 
 ```bash
-ansible-playbook -i inventories/hosts site.yaml --tags deploy-agent
-```
-
-## Test Commands
-
-```bash
-# Deploy new image
-curl -X POST "http://localhost:8080/deploy" \
-  -H "Authorization: Bearer my-secret-token" \
-  -H "Content-Type: application/json" \
-  -d '{"image_tag": "abc123"}'
-
-# Check status
-curl -X GET "http://localhost:8080/status"
+# Deploy complete infrastructure
+ansible-playbook -i inventories/hosts site.yaml --ask-vault-password
 ```

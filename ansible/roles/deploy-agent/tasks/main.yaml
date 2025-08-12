@@ -61,14 +61,13 @@
 # Temporary task: Build deploy agent Docker image on host
 - name: Build deploy agent Docker image on host
   community.docker.docker_image:
-    name: "{{ deploy_agent_image_name | default('deploy-agent') }}"
-    tag: "{{ deploy_agent_image_tag | default('latest') }}"
+    name: "{{ deploy_agent_image_name }}"
+    tag: "{{ deploy_agent_image_tag }}"
     path: "{{ deploy_agent_dir }}"
     build_args:
       DEPLOY_TOKEN: "{{ deploy_agent_token }}"
     force_source: true
-  tags: [build-image, deploy-agent]
-  when: build_deploy_agent_image | default(false)
+  when: build_deploy_agent_image
   notify: restart deploy agent
 
 - name: Build (if needed) and start deploy agent
