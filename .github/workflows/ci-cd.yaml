@@ -33,21 +33,49 @@ jobs:
           cd api-service
           pip install -r requirements.txt
 
+      - name: Start API server for testing
+        run: |
+          cd api-service
+          echo "Starting API server for pytest..."
+          python api-server.py > server.log 2>&1 &
+          API_PID=$!
+          echo "Server PID: $API_PID"
+          echo "Waiting for server to be ready..."
+          sleep 5
+          
+          # Verify server is running
+          if ! ps -p $API_PID > /dev/null; then
+            echo "❌ Server process died"
+            cat server.log
+            exit 1
+          fi
+          
+          # Test if server is responding
+          if ! curl -f http://localhost:8000/health >/dev/null 2>&1; then
+            echo "❌ Server not responding"
+            cat server.log
+            exit 1
+          fi
+          
+          echo "✅ Server is ready for testing"
+
       - name: Run tests
         run: |
           cd api-service
           python -m pytest test_api.py -v
 
-      - name: Test API endpoints
+      - name: Test API endpoints with curl
         run: |
           cd api-service
-          python api-server.py &
-          sleep 5
+          echo "Testing endpoints with curl..."
           curl -f http://localhost:8000/health
           curl -f http://localhost:8000/
           curl -f http://localhost:8000/random
           curl -f http://localhost:8000/cons
-          pkill -f api-server.py
+          
+          echo "Stopping server..."
+          kill $API_PID
+          wait $API_PID 2>/dev/null || true
 
       - name: Test Docker build
         run: |
