@@ -4,3 +4,4 @@
 # Local editor schemas (optional, not needed in repo)
 ansible/.schemas/
 
+.vault_pass

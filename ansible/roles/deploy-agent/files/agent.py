@@ -3,7 +3,7 @@
 Lightweight Deploy Agent
 - Listens on port 8080
 - Basic authentication
-- Updates docker-compose.yml with new image tag
+- Updates docker-compose.yaml with new image tag
 - Runs docker-compose up -d
 """
 
@@ -29,8 +29,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Configuration
-DEPLOY_TOKEN = os.environ.get('DEPLOY_TOKEN', 'my-secret-token')
-COMPOSE_FILE = os.environ.get('COMPOSE_FILE', 'docker-compose.yml')
+DEPLOY_TOKEN = os.environ.get('DEPLOY_TOKEN')
+if not DEPLOY_TOKEN:
+    raise ValueError("DEPLOY_TOKEN environment variable is required")
+COMPOSE_FILE = os.environ.get('COMPOSE_FILE', 'docker-compose.yaml')
 COMPOSE_DIR = os.environ.get('COMPOSE_DIR', '/opt/media-service/api')
 PORT = int(os.environ.get('PORT', 8080))
 
@@ -95,9 +97,9 @@ def deploy():
         
         logger.info(f"Starting deployment with image tag: {image_tag} from registry: {registry_image}")
         
-        # Update docker-compose.yml
+        # Update docker-compose.yaml
         if not update_docker_compose(image_tag, registry_image):
-            return jsonify({'error': 'Failed to update docker-compose.yml'}), 500
+            return jsonify({'error': 'Failed to update docker-compose.yaml'}), 500
         
         # Deploy with docker-compose
         deploy_result = deploy_with_compose()
@@ -116,7 +118,7 @@ def deploy():
         return jsonify({'error': str(e)}), 500
 
 def update_docker_compose(image_tag, registry_image):
-    """Update docker-compose.yml with new image tag and registry"""
+    """Update docker-compose.yaml with new image tag and registry"""
     try:
         compose_path = os.path.join(COMPOSE_DIR, COMPOSE_FILE)
         
@@ -124,7 +126,7 @@ def update_docker_compose(image_tag, registry_image):
             logger.error(f"Docker compose file not found: {compose_path}")
             return False
         
-        # Read current docker-compose.yml
+        # Read current docker-compose.yaml
         with open(compose_path, 'r') as f:
             compose_data = yaml.safe_load(f)
         
@@ -136,7 +138,7 @@ def update_docker_compose(image_tag, registry_image):
                     service_config['image'] = f"{registry_image}:{image_tag}"
                     logger.info(f"Updated {service_name} image to: {service_config['image']}")
         
-        # Write updated docker-compose.yml
+        # Write updated docker-compose.yaml
         with open(compose_path, 'w') as f:
             yaml.dump(compose_data, f, default_flow_style=False)
         
@@ -144,7 +146,7 @@ def update_docker_compose(image_tag, registry_image):
         return True
         
     except Exception as e:
-        logger.error(f"Error updating docker-compose.yml: {e}")
+        logger.error(f"Error updating docker-compose.yaml: {e}")
         return False
 
 def deploy_with_compose():
@@ -217,9 +219,9 @@ def rollback():
         
         logger.info(f"Starting rollback to image tag: {previous_tag}")
         
-        # Update docker-compose.yml
+        # Update docker-compose.yaml
         if not update_docker_compose(previous_tag):
-            return jsonify({'error': 'Failed to update docker-compose.yml'}), 500
+            return jsonify({'error': 'Failed to update docker-compose.yaml'}), 500
         
         # Deploy with docker-compose
         deploy_result = deploy_with_compose()

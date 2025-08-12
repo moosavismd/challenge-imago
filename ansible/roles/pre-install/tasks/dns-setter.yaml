@@ -1,5 +1,5 @@
 ---
-# DNS configuration tasks (included conditionally from main.yml)
+# DNS configuration tasks (included conditionally from main.yaml)
 - name: Gather service facts
   service_facts:
   tags: [dns, dns-setter]

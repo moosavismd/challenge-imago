@@ -8,7 +8,7 @@ All agent files are included in the role:
 - `files/agent.py` - Python Flask application
 - `files/requirements.txt` - Python dependencies
 - `files/Dockerfile` - Container build instructions
-- `files/docker-compose.yml` - Service definition
+- `files/docker-compose.yaml` - Service definition
 
 ## Variables
 

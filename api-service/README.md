@@ -1,28 +1,34 @@
-# API Service
+# Media Service API
 
-Flask API server with Docker and GitLab CI/CD.
-
-## API Endpoints
-
-- `GET /` - Home with available routes
-- `GET /health` - Health check
-- `GET /random` - Random number (1-1000)
-- `GET /cons` - Constant number (17)
+Simple Flask API for media search and download service.
 
 ## Quick Start
 
 ```bash
-# Run directly
+# Install dependencies
+pip install -r requirements.txt
+
+# Run locally
 python api-server.py
 
-# Run with Docker
+# Or with Docker
+docker build -t media-service .
+docker run -p 8000:8000 media-service
+
+# Or with Docker Compose
 docker-compose up -d
 ```
 
+## Endpoints
+
+- `/` - Home with available routes
+- `/random` - Returns random number 1-1000
+- `/cons` - Returns constant 17
+- `/health` - Health check endpoint
+
 ## Files
 
-- `api-server.py` - Flask application
-- `Dockerfile` - Container build
-- `docker-compose.yml` - Local deployment
-- `.gitlab-ci.yml` - CI/CD pipeline
+- `api-server.py` - Main Flask application
 - `requirements.txt` - Python dependencies
+- `Dockerfile` - Container build instructions
+- `docker-compose.yaml` - Local deployment

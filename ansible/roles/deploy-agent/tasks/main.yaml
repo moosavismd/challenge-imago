@@ -33,12 +33,12 @@
     - agent.py
     - requirements.txt
     - Dockerfile
-    - docker-compose.yml
+    - docker-compose.yaml
 
 - name: Copy API server docker-compose
   copy:
-    src: "../../../api-service/docker-compose.yml"
-    dest: "{{ project_api_dir }}/docker-compose.yml"
+    src: "../../../api-service/docker-compose.yaml"
+    dest: "{{ project_api_dir }}/docker-compose.yaml"
     owner: root
     group: root
     mode: '0644'

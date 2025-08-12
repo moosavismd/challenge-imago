@@ -12,10 +12,10 @@ deploy_agent_dir: "{{ project_deploy_agent_dir }}"
 
 # Deploy agent configuration
 deploy_agent_port: 8080
-deploy_agent_token: "{{ vault_deploy_token | default('my-secret-token') }}"
+deploy_agent_token: "{{ vault_deploy_token }}"
 
 # Docker compose configuration
-compose_file: "docker-compose.yml"
+compose_file: "docker-compose.yaml"
 compose_dir: "{{ project_api_dir }}"
 
 # Docker image build configuration (temporary)
@@ -27,7 +27,7 @@ build_deploy_agent_image: false  # Set to true to build image on host
 registry_image: "ghcr.io/moosavismd/challenge-imago"
 
 # Registry authentication (for private repositories)
-registry_username: "{{ vault_registry_username | default('moosavismd') }}"
-registry_password: "{{ vault_registry_password | default('') }}"
+registry_username: "{{ vault_registry_username }}"
+registry_password: "{{ vault_registry_password }}"
 
 
