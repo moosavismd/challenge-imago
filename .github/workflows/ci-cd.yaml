@@ -56,7 +56,7 @@ jobs:
         run: |
           cd api-service
           echo "🧪 Running unit tests..."
-          python -m pytest --cov=. --cov-report=xml --cov-report=term-missing
+          python -m pytest test_api.py -v --cov=. --cov-report=xml --cov-report=term-missing
 
       - name: Test API endpoints
         run: |
