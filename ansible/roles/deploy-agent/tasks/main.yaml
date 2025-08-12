@@ -51,31 +51,12 @@
     group: root
     mode: '0600'
 
-- name: Check if registry credentials are provided
-  debug:
-    msg: |
-      Registry authentication:
-      - Username: {{ registry_username | default('NOT SET') }}
-      - Password: {{ 'SET' if registry_password else 'NOT SET' }}
-      - Registry: {{ registry_image }}
-
 - name: Ensure Docker is authenticated with GitHub Container Registry
   community.docker.docker_login:
     registry: ghcr.io
-    username: "{{ registry_username | default('moosavismd') }}"
+    username: "{{ registry_username }}"
     password: "{{ registry_password }}"
     reauthorize: yes
-  when: 
-    - registry_password is defined
-    - registry_password is not none
-    - registry_password | length > 0
-  register: docker_login_result
-  failed_when: docker_login_result.failed
-
-- name: Display Docker login result
-  debug:
-    msg: "Docker login {{ 'successful' if docker_login_result.changed else 'already authenticated' }}"
-  when: registry_password is defined and registry_password is not none and registry_password | length > 0
 
 # Temporary task: Build deploy agent Docker image on host
 - name: Build deploy agent Docker image on host

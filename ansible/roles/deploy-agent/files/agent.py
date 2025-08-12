@@ -152,7 +152,20 @@ def deploy_with_compose():
     try:
         logger.info(f"Running docker-compose up -d in {COMPOSE_DIR}")
         
+        # Stop and remove existing containers to avoid conflicts
+        logger.info("Stopping existing containers...")
+        stop_result = subprocess.run(
+            ['docker-compose', '-f', COMPOSE_FILE, 'down'],
+            cwd=COMPOSE_DIR,
+            capture_output=True,
+            text=True
+        )
+        
+        if stop_result.returncode != 0:
+            logger.warning(f"Container stop warning: {stop_result.stderr}")
+        
         # Pull latest images
+        logger.info("Pulling latest images...")
         pull_result = subprocess.run(
             ['docker-compose', '-f', COMPOSE_FILE, 'pull'],
             cwd=COMPOSE_DIR,
@@ -164,6 +177,7 @@ def deploy_with_compose():
             logger.warning(f"Image pull warning: {pull_result.stderr}")
         
         # Start services
+        logger.info("Starting services...")
         up_result = subprocess.run(
             ['docker-compose', '-f', COMPOSE_FILE, 'up', '-d'],
             cwd=COMPOSE_DIR,

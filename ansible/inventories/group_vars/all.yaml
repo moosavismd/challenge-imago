@@ -14,3 +14,7 @@ agent_param_hostname: "{{ inventory_hostname }}"
 agent_param_listenport: 10050
 
 # Zabbix verification is disabled via --skip-tags verify
+
+# Registry authentication for deploy agent (all hosts)
+registry_username: "moosavismd"
+registry_password: "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"
