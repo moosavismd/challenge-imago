@@ -37,7 +37,7 @@ jobs:
         run: |
           cd api-service
           pip install -r requirements.txt
-          pip install pytest pytest-cov flake8 mypy
+          pip install pytest pytest-cov flake8 mypy types-requests
 
       - name: Run linting checks
         run: |
