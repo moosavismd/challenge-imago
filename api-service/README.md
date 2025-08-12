@@ -2,6 +2,13 @@
 
 Flask API server with Docker and GitLab CI/CD.
 
+## API Endpoints
+
+- `GET /` - Home with available routes
+- `GET /health` - Health check
+- `GET /random` - Random number (1-1000)
+- `GET /cons` - Constant number (17)
+
 ## Quick Start
 
 ```bash
