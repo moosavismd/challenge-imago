@@ -59,6 +59,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
+          cd api-service
           # Build with commit SHA tag
           docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
           # Tag as latest
