@@ -24,6 +24,6 @@ deploy_agent_image_tag: "latest"
 build_deploy_agent_image: false  # Set to true to build image on host
 
 # Registry configuration
-registry_image: "registry.gitlab.com/moosavi.smd/api-server"
+registry_image: "ghcr.io/moosavismd/challenge-imago"
 
 

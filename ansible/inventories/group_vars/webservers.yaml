@@ -4,5 +4,13 @@ install_pre_install: true
 install_zabbix: true
 
 # NGINX API Proxy Configuration for Media Service
-# Note: Default values are in nginx role defaults/main.yaml
-# Override here only if you need different values
+# Override default nginx_vhosts with your actual domains
+nginx_vhosts:
+  - server_name: "ali.com"
+    backend_url: "http://localhost:8000"
+    ssl_type: "selfsigned"
+    redirect_www: true
+  - server_name: "dev.mammad.com"
+    backend_url: "http://localhost:8000"
+    ssl_type: "selfsigned"
+    redirect_www: true

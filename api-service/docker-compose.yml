@@ -1,6 +1,6 @@
 services:
   flask-app:
-    image: ${REGISTRY_IMAGE}:latest
+    image: ghcr.io/moosavismd/challenge-imago:latest
     container_name: flask-api
     ports:
       - "8000:8000"

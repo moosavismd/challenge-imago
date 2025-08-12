@@ -80,7 +80,7 @@ def deploy():
         logger.warning("Unauthorized deployment attempt")
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Get image tag from request
+    # Get image tag and registry from request
     try:
         data = request.get_json()
         if not data:
@@ -90,10 +90,13 @@ def deploy():
         if not image_tag:
             return jsonify({'error': 'image_tag required'}), 400
         
-        logger.info(f"Starting deployment with image tag: {image_tag}")
+        # Get registry image from request or use default from environment
+        registry_image = data.get('registry_image', os.environ.get('REGISTRY_IMAGE', 'ghcr.io/moosavismd/challenge-imago'))
+        
+        logger.info(f"Starting deployment with image tag: {image_tag} from registry: {registry_image}")
         
         # Update docker-compose.yml
-        if not update_docker_compose(image_tag):
+        if not update_docker_compose(image_tag, registry_image):
             return jsonify({'error': 'Failed to update docker-compose.yml'}), 500
         
         # Deploy with docker-compose
@@ -112,8 +115,8 @@ def deploy():
         logger.error(f"Deployment error: {e}")
         return jsonify({'error': str(e)}), 500
 
-def update_docker_compose(image_tag):
-    """Update docker-compose.yml with new image tag"""
+def update_docker_compose(image_tag, registry_image):
+    """Update docker-compose.yml with new image tag and registry"""
     try:
         compose_path = os.path.join(COMPOSE_DIR, COMPOSE_FILE)
         
@@ -125,26 +128,19 @@ def update_docker_compose(image_tag):
         with open(compose_path, 'r') as f:
             compose_data = yaml.safe_load(f)
         
-        # Update image tag for the main service
+        # Update image for the main service
         if 'services' in compose_data:
             for service_name, service_config in compose_data['services'].items():
                 if 'image' in service_config:
-                    # Handle both tagged and untagged images
-                    if ':' in service_config['image']:
-                        # Image already has a tag, extract base name
-                        base_image = service_config['image'].split(':')[0]
-                    else:
-                        # Image has no tag, use as is
-                        base_image = service_config['image']
-                    
-                    service_config['image'] = f"{base_image}:{image_tag}"
+                    # Use the full registry image with tag
+                    service_config['image'] = f"{registry_image}:{image_tag}"
                     logger.info(f"Updated {service_name} image to: {service_config['image']}")
         
         # Write updated docker-compose.yml
         with open(compose_path, 'w') as f:
             yaml.dump(compose_data, f, default_flow_style=False)
         
-        logger.info(f"Updated {compose_path} with image tag: {image_tag}")
+        logger.info(f"Updated {compose_path} with image: {registry_image}:{image_tag}")
         return True
         
     except Exception as e:

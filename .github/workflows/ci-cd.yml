@@ -100,7 +100,7 @@ jobs:
           curl -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{\"image_tag\": \"${{ github.sha }}\"}" \
+            -d "{\"image_tag\": \"${{ github.sha }}\", \"registry_image\": \"ghcr.io/${{ github.repository }}\"}" \
             --max-time ${{ env.DEPLOY_TIMEOUT }}
 
       - name: Wait for deployments
