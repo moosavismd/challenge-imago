@@ -37,12 +37,97 @@ jobs:
         run: |
           cd api-service
           pip install -r requirements.txt
+          pip install pytest pytest-cov flake8 mypy
 
-      - name: Run tests
+      - name: Run linting checks
         run: |
           cd api-service
-          echo "Running tests..."
-          echo "Tests passed!"
+          echo "🔍 Running linting checks..."
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run type checking
+        run: |
+          cd api-service
+          echo "🔍 Running type checking..."
+          mypy . --ignore-missing-imports --no-strict-optional
+
+      - name: Run unit tests
+        run: |
+          cd api-service
+          echo "🧪 Running unit tests..."
+          python -m pytest --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Test API endpoints
+        run: |
+          cd api-service
+          echo "🌐 Testing API endpoints..."
+          
+          # Start the API server in background
+          python api-server.py &
+          API_PID=$!
+          
+          # Wait for server to start
+          sleep 5
+          
+          # Test health endpoint
+          if curl -f http://localhost:8000/health; then
+            echo "✅ Health endpoint working"
+          else
+            echo "❌ Health endpoint failed"
+            exit 1
+          fi
+          
+          # Test home endpoint
+          if curl -f http://localhost:8000/; then
+            echo "✅ Home endpoint working"
+          else
+            echo "❌ Home endpoint failed"
+            exit 1
+          fi
+          
+          # Test random endpoint
+          if curl -f http://localhost:8000/random; then
+            echo "✅ Random endpoint working"
+          else
+            echo "❌ Random endpoint failed"
+            exit 1
+          fi
+          
+          # Test constant endpoint
+          if curl -f http://localhost:8000/cons; then
+            echo "✅ Constant endpoint working"
+          else
+            echo "❌ Constant endpoint failed"
+            exit 1
+          fi
+          
+          # Stop the server
+          kill $API_PID
+          echo "🎉 All API endpoint tests passed!"
+
+      - name: Test Docker build
+        run: |
+          cd api-service
+          echo "🐳 Testing Docker build..."
+          docker build -t test-media-service .
+          
+          # Test container runs
+          docker run -d --name test-container -p 8001:8000 test-media-service
+          sleep 10
+          
+          # Test container health
+          if curl -f http://localhost:8001/health; then
+            echo "✅ Docker container working"
+          else
+            echo "❌ Docker container failed"
+            exit 1
+          fi
+          
+          # Cleanup
+          docker stop test-container
+          docker rm test-container
+          echo "🎉 Docker build test passed!"
 
   build:
     runs-on: ubuntu-latest
@@ -137,6 +222,7 @@ jobs:
           sleep 30
 
       - name: Verify deployments
+        id: verify-deployments
         run: |
           echo "Verifying deployments..."
           
@@ -157,3 +243,39 @@ jobs:
           echo "✅ Server B verification successful"
           
           echo "🎉 All deployments verified successfully!"
+
+      - name: Rollback on deployment failure
+        if: failure() && steps.verify-deployments.outcome == 'failure'
+        run: |
+          echo "🚨 Deployment verification failed! Initiating automatic rollback..."
+          
+          # Get previous commit SHA for rollback
+          PREVIOUS_SHA=$(git rev-parse HEAD~1)
+          echo "Rolling back to previous commit: $PREVIOUS_SHA"
+          
+          # Rollback Server A
+          echo "Rolling back Server A..."
+          if curl -f -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
+            --max-time ${{ env.DEPLOY_TIMEOUT }}; then
+            echo "✅ Server A rollback successful"
+          else
+            echo "❌ Server A rollback failed"
+          fi
+          
+          # Rollback Server B
+          echo "Rolling back Server B..."
+          if curl -f -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
+            --max-time ${{ env.DEPLOY_TIMEOUT }}; then
+            echo "✅ Server B rollback successful"
+          else
+            echo "❌ Server B rollback failed"
+          fi
+          
+          echo "🔄 Rollback process completed"
+          exit 1  # Ensure the job still fails after rollback
