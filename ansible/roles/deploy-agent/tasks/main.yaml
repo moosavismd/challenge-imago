@@ -51,6 +51,14 @@
     group: root
     mode: '0600'
 
+- name: Ensure Docker is authenticated with GitHub Container Registry
+  community.docker.docker_login:
+    registry: ghcr.io
+    username: "{{ registry_username | default('moosavismd') }}"
+    password: "{{ registry_password | default('') }}"
+    reauthorize: yes
+  when: registry_password is defined and registry_password != ''
+
 # Temporary task: Build deploy agent Docker image on host
 - name: Build deploy agent Docker image on host
   community.docker.docker_image:

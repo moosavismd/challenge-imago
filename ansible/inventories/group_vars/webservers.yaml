@@ -6,11 +6,11 @@ install_zabbix: true
 # NGINX API Proxy Configuration for Media Service
 # Override default nginx_vhosts with your actual domains
 nginx_vhosts:
-  - server_name: "rev.ali.com"
+  - server_name: "api.imago.local"
     backend_url: "http://localhost:8000"
     ssl_type: "selfsigned"
     redirect_www: true
-  - server_name: "rev.mammad.com"
+  - server_name: "media.imago.local"
     backend_url: "http://localhost:8000"
     ssl_type: "selfsigned"
     redirect_www: true

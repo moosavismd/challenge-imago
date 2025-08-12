@@ -26,4 +26,8 @@ build_deploy_agent_image: false  # Set to true to build image on host
 # Registry configuration
 registry_image: "ghcr.io/moosavismd/challenge-imago"
 
+# Registry authentication (for private repositories)
+registry_username: "{{ vault_registry_username | default('moosavismd') }}"
+registry_password: "{{ vault_registry_password | default('') }}"
+
 
