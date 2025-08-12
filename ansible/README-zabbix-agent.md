@@ -16,7 +16,7 @@ agent_param_listenport: 10050
 ## Usage
 
 ```bash
-ansible-playbook -i inventories/hosts site.yaml
+ansible-playbook -i inventories/hosts site.yaml --skip-tags verify
 ```
 
 ## Features

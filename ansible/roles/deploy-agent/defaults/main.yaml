@@ -15,7 +15,6 @@ deploy_agent_port: 8080
 deploy_agent_token: "{{ vault_deploy_token }}"
 
 # Docker compose configuration
-compose_file: "docker-compose.yaml"
 compose_dir: "{{ project_api_dir }}"
 
 # Docker image build configuration (temporary)

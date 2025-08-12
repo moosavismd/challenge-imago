@@ -4,22 +4,28 @@ stages:
   - deploy
 
 variables:
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: "/certs"
-  # Deployment server configuration - can be overridden in GitLab CI/CD variables
   SERVER_A_IP: "37.32.15.192"
   SERVER_B_IP: "188.121.102.61"
   DEPLOY_AGENT_PORT: "8080"
-  DEPLOY_TIMEOUT: "60"
-  VERIFY_TIMEOUT: "30"
 
 test:
   stage: test
   image: python:3.11-slim
   script:
     - pip install -r requirements.txt
-    - echo "Running tests..."
-    - echo "Tests passed!"
+    - python -m pytest test_api.py -v
+    - python api-server.py &
+    - sleep 5
+    - curl -f http://localhost:8000/health
+    - curl -f http://localhost:8000/
+    - curl -f http://localhost:8000/random
+    - curl -f http://localhost:8000/cons
+    - pkill -f api-server.py
+    - docker build -t test-media-service .
+    - docker run -d --name test-container -p 8001:8000 test-media-service
+    - sleep 5
+    - curl -f http://localhost:8001/health
+    - docker stop test-container && docker rm test-container
 
 build:
   stage: build
@@ -42,16 +48,22 @@ deploy:
   before_script:
     - apk add --no-cache curl
   script:
-    - echo "Deploying to Server A..."
-    - 'curl -X POST "http://$SERVER_A_IP:$DEPLOY_AGENT_PORT/deploy" -H "Authorization: Bearer $DEPLOY_TOKEN" -H "Content-Type: application/json" -d "{\"image_tag\": \"$CI_COMMIT_SHA\"}" --max-time $DEPLOY_TIMEOUT'
-    - echo "Deploying to Server B..."
-    - 'curl -X POST "http://$SERVER_B_IP:$DEPLOY_AGENT_PORT/deploy" -H "Authorization: Bearer $DEPLOY_TOKEN" -H "Content-Type: application/json" -d "{\"image_tag\": \"$CI_COMMIT_SHA\"}" --max-time $DEPLOY_TIMEOUT'
-    - echo "Waiting for deployments to complete..."
+    - echo "Rolling deployment: Deploying to Server A first..."
+    - curl -s -X POST "http://$SERVER_A_IP:$DEPLOY_AGENT_PORT/deploy" -H "Authorization: Bearer $DEPLOY_TOKEN" -H "Content-Type: application/json" -d "{\"image_tag\": \"$CI_COMMIT_SHA\", \"registry_image\": \"$CI_REGISTRY_IMAGE\"}" --max-time 60
+    - echo "Waiting for Server A deployment to stabilize..."
     - sleep 30
-    - echo "Verifying deployments..."
-    - curl -f "http://$SERVER_A_IP:$DEPLOY_AGENT_PORT/status" --max-time $VERIFY_TIMEOUT
-    - curl -f "http://$SERVER_B_IP:$DEPLOY_AGENT_PORT/status" --max-time $VERIFY_TIMEOUT
-    - echo "Deployment completed successfully!"
+    - echo "Verifying Server A deployment..."
+    - curl -f "http://$SERVER_A_IP:8000/health" --max-time 30
+    - echo "Server A deployment verified successfully!"
+    - echo "Rolling deployment: Deploying to Server B..."
+    - curl -s -X POST "http://$SERVER_B_IP:$DEPLOY_AGENT_PORT/deploy" -H "Authorization: Bearer $DEPLOY_TOKEN" -H "Content-Type: application/json" -d "{\"image_tag\": \"$CI_COMMIT_SHA\", \"registry_image\": \"$CI_REGISTRY_IMAGE\"}" --max-time 60
+    - echo "Waiting for Server B deployment to stabilize..."
+    - sleep 30
+    - echo "Verifying Server B deployment..."
+    - curl -f "http://$SERVER_B_IP:8000/health" --max-time 30
+    - echo "Server B deployment verified successfully!"
+    - echo "Rolling deployment completed successfully!"
+    - echo "Both servers are now running the new version."
   only:
     - main
   environment:

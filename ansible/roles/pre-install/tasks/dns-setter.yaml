@@ -2,12 +2,10 @@
 # DNS configuration tasks (included conditionally from main.yaml)
 - name: Gather service facts
   service_facts:
-  tags: [dns, dns-setter]
 
 - name: Check if systemd-resolved is available
   set_fact:
     has_systemd_resolved: "'systemd-resolved.service' in ansible_facts.services"
-  tags: [dns, dns-setter]
 
 - name: Set DNS in /etc/systemd/resolved.conf
   ini_file:
@@ -19,7 +17,6 @@
     backup: yes
   when: has_systemd_resolved
   notify: restart systemd-resolved
-  tags: [dns, dns-setter]
 
 - name: Ensure systemd-resolved is enabled and started
   systemd:
@@ -27,6 +24,5 @@
     enabled: yes
     state: started
   when: has_systemd_resolved
-  tags: [dns, dns-setter]
 
 

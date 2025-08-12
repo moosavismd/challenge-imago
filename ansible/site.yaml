@@ -4,20 +4,20 @@
   become: true
   roles:
     - role: pre-install
-      when: install_pre_install | default(false)
+      when: install_pre_install
     - role: zabbix.zabbix.agent
-      when: install_zabbix | default(false)
+      when: install_zabbix
 
 - name: NGINX reverse proxy setup
   hosts: webservers
   become: true
-  tags: [nginx, webservers]
+  tags: [nginx]
   roles:
     - nginx
 
 - name: Deploy Agent setup
   hosts: webservers
   become: true
-  tags: [deploy-agent, webservers]
+  tags: [deploy-agent]
   roles:
     - deploy-agent

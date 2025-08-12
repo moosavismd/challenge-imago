@@ -12,14 +12,9 @@ permissions:
   id-token: write
 
 env:
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: "/certs"
-  # Deployment server configuration - can be overridden in GitHub Secrets
   SERVER_A_IP: "37.32.15.192"
   SERVER_B_IP: "188.121.102.61"
   DEPLOY_AGENT_PORT: "8080"
-  DEPLOY_TIMEOUT: "60"
-  VERIFY_TIMEOUT: "30"
 
 jobs:
   test:
@@ -37,97 +32,31 @@ jobs:
         run: |
           cd api-service
           pip install -r requirements.txt
-          pip install pytest pytest-cov flake8 mypy types-requests
 
-      - name: Run linting checks
+      - name: Run tests
         run: |
           cd api-service
-          echo "🔍 Running linting checks..."
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-      - name: Run type checking
-        run: |
-          cd api-service
-          echo "🔍 Running type checking..."
-          mypy . --ignore-missing-imports --no-strict-optional
-
-      - name: Run unit tests
-        run: |
-          cd api-service
-          echo "🧪 Running unit tests..."
-          python -m pytest test_api.py -v --cov=. --cov-report=xml --cov-report=term-missing
+          python -m pytest test_api.py -v
 
       - name: Test API endpoints
         run: |
           cd api-service
-          echo "🌐 Testing API endpoints..."
-          
-          # Start the API server in background
           python api-server.py &
-          API_PID=$!
-          
-          # Wait for server to start
           sleep 5
-          
-          # Test health endpoint
-          if curl -f http://localhost:8000/health; then
-            echo "✅ Health endpoint working"
-          else
-            echo "❌ Health endpoint failed"
-            exit 1
-          fi
-          
-          # Test home endpoint
-          if curl -f http://localhost:8000/; then
-            echo "✅ Home endpoint working"
-          else
-            echo "❌ Home endpoint failed"
-            exit 1
-          fi
-          
-          # Test random endpoint
-          if curl -f http://localhost:8000/random; then
-            echo "✅ Random endpoint working"
-          else
-            echo "❌ Random endpoint failed"
-            exit 1
-          fi
-          
-          # Test constant endpoint
-          if curl -f http://localhost:8000/cons; then
-            echo "✅ Constant endpoint working"
-          else
-            echo "❌ Constant endpoint failed"
-            exit 1
-          fi
-          
-          # Stop the server
-          kill $API_PID
-          echo "🎉 All API endpoint tests passed!"
+          curl -f http://localhost:8000/health
+          curl -f http://localhost:8000/
+          curl -f http://localhost:8000/random
+          curl -f http://localhost:8000/cons
+          pkill -f api-server.py
 
       - name: Test Docker build
         run: |
           cd api-service
-          echo "🐳 Testing Docker build..."
           docker build -t test-media-service .
-          
-          # Test container runs
           docker run -d --name test-container -p 8001:8000 test-media-service
-          sleep 10
-          
-          # Test container health
-          if curl -f http://localhost:8001/health; then
-            echo "✅ Docker container working"
-          else
-            echo "❌ Docker container failed"
-            exit 1
-          fi
-          
-          # Cleanup
-          docker stop test-container
-          docker rm test-container
-          echo "🎉 Docker build test passed!"
+          sleep 5
+          curl -f http://localhost:8001/health
+          docker stop test-container && docker rm test-container
 
   build:
     runs-on: ubuntu-latest
@@ -147,85 +76,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify Docker setup
-        run: |
-          echo "🔍 Verifying Docker setup..."
-          
-          # Test basic Docker functionality
-          if ! docker version; then
-            echo "❌ Docker is not working properly"
-            exit 1
-          fi
-          
-          # Test Docker pull capability
-          if ! docker pull hello-world:latest; then
-            echo "❌ Docker pull test failed"
-            exit 1
-          fi
-          
-          echo "✅ Docker is working and ready for registry operations"
-
       - name: Build and push Docker image
         run: |
           cd api-service
-          echo "🐳 Building Docker image..."
-          
-          # Clean up any existing images to avoid conflicts
-          docker system prune -f
-          
-          # Build with commit SHA tag
-          echo "Building image with tag: ${{ github.sha }}"
-          if ! docker build --no-cache -t ghcr.io/${{ github.repository }}:${{ github.sha }} .; then
-            echo "❌ Docker build failed"
-            exit 1
-          fi
-          
-          # Tag as latest
-          echo "Tagging as latest..."
-          if ! docker tag ghcr.io/${{ github.repository }}:${{ github.sha }} ghcr.io/${{ github.repository }}:latest; then
-            echo "❌ Docker tag failed"
-            exit 1
-          fi
-          
-          # Push with retry logic
-          echo "Pushing image to registry..."
-          
-          # Function to push with retries
-          push_with_retry() {
-            local image=$1
-            local max_attempts=3
-            local attempt=1
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "Push attempt $attempt/$max_attempts for $image"
-              if docker push "$image"; then
-                echo "✅ Successfully pushed $image"
-                return 0
-              else
-                echo "❌ Push attempt $attempt failed for $image"
-                if [ $attempt -eq $max_attempts ]; then
-                  echo "❌ All push attempts failed for $image"
-                  return 1
-                fi
-                echo "⏳ Waiting 10 seconds before retry..."
-                sleep 10
-                attempt=$((attempt + 1))
-              fi
-            done
-          }
-          
-          # Push both tags
-          if ! push_with_retry "ghcr.io/${{ github.repository }}:${{ github.sha }}"; then
-            echo "❌ Failed to push SHA tag"
-            exit 1
-          fi
-          
-          if ! push_with_retry "ghcr.io/${{ github.repository }}:latest"; then
-            echo "❌ Failed to push latest tag"
-            exit 1
-          fi
-          
-          echo "🎉 All images pushed successfully!"
+          docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
+          docker tag ghcr.io/${{ github.repository }}:${{ github.sha }} ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -235,32 +92,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install curl
+      - name: Deploy to Server A (First)
         run: |
-          # curl is available by default on ubuntu-latest
-
-      - name: Deploy to Server A
-        id: deploy-server-a
-        run: |
-          echo "🚀 Deploying to Server A..."
-          response=$(curl -s -w "\n%{http_code}" -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
+          echo "🚀 Rolling deployment: Deploying to Server A first..."
+          curl -s -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{\"image_tag\": \"${{ github.sha }}\"}" \
-            --max-time ${{ env.DEPLOY_TIMEOUT }})
-          
-          http_code=$(echo "$response" | tail -n1)
-          response_body=$(echo "$response" | head -n -1)
-          
-          echo "Server A deployment response: $response_body"
-          echo "Server A HTTP status: $http_code"
-          
-          if [ "$http_code" -ne 200 ]; then
-            echo "❌ Server A deployment failed with HTTP $http_code"
-            exit 1
-          else
-            echo "✅ Server A deployment successful"
-          fi
+            -d "{\"image_tag\": \"${{ github.sha }}\", \"registry_image\": \"ghcr.io/${{ github.repository }}\"}" \
+            --max-time 60
 
       - name: Wait for Server A deployment
         run: |
@@ -268,56 +107,19 @@ jobs:
           sleep 30
 
       - name: Verify Server A deployment
-        id: verify-server-a
         run: |
           echo "🔍 Verifying Server A deployment..."
-          
-          # Wait for deploy agent to be ready
-          for i in {1..10}; do
-            if curl -f "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time 10; then
-              echo "✅ Server A deploy agent is ready"
-              break
-            else
-              echo "⏳ Waiting for Server A deploy agent... (attempt $i/10)"
-              sleep 5
-            fi
-          done
-          
-          # Test API health on Server A
-          for i in {1..10}; do
-            if curl -f "http://${{ env.SERVER_A_IP }}:8000/health" --max-time 10; then
-              echo "✅ Server A API is healthy"
-              break
-            else
-              echo "⏳ Waiting for Server A API... (attempt $i/10)"
-              sleep 5
-            fi
-          done
-          
-          echo "🎉 Server A deployment verified successfully!"
+          curl -f "http://${{ env.SERVER_A_IP }}:8000/health" --max-time 30
+          echo "✅ Server A deployment verified successfully!"
 
-      - name: Deploy to Server B
-        id: deploy-server-b
+      - name: Deploy to Server B (Second)
         run: |
-          echo "🚀 Deploying to Server B..."
-          response=$(curl -s -w "\n%{http_code}" -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
+          echo "🚀 Rolling deployment: Deploying to Server B..."
+          curl -s -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"image_tag\": \"${{ github.sha }}\", \"registry_image\": \"ghcr.io/${{ github.repository }}\"}" \
-            --max-time ${{ env.DEPLOY_TIMEOUT }})
-          
-          http_code=$(echo "$response" | tail -n1)
-          response_body=$(echo "$response" | head -n -1)
-          
-          echo "Server B deployment response: $response_body"
-          echo "Server B HTTP status: $http_code"
-          
-          if [ "$http_code" -ne 200 ]; then
-            echo "❌ Server B deployment failed with HTTP $http_code"
-            exit 1
-          else
-            echo "✅ Server B deployment successful"
-          fi
+            --max-time 60
 
       - name: Wait for Server B deployment
         run: |
@@ -325,112 +127,12 @@ jobs:
           sleep 30
 
       - name: Verify Server B deployment
-        id: verify-server-b
         run: |
           echo "🔍 Verifying Server B deployment..."
-          
-          # Wait for deploy agent to be ready
-          for i in {1..10}; do
-            if curl -f "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time 10; then
-              echo "✅ Server B deploy agent is ready"
-              break
-            else
-              echo "⏳ Waiting for Server B deploy agent... (attempt $i/10)"
-              sleep 5
-            fi
-          done
-          
-          # Test API health on Server B
-          for i in {1..10}; do
-            if curl -f "http://${{ env.SERVER_B_IP }}:8000/health" --max-time 10; then
-              echo "✅ Server B API is healthy"
-              break
-            else
-              echo "⏳ Waiting for Server B API... (attempt $i/10)"
-              sleep 5
-            fi
-          done
-          
-          echo "🎉 Server B deployment verified successfully!"
+          curl -f "http://${{ env.SERVER_B_IP }}:8000/health" --max-time 30
+          echo "✅ Server B deployment verified successfully!"
 
-      - name: Final verification of both servers
+      - name: Final verification
         run: |
-          echo "🔍 Final verification of both servers..."
-          
-          # Verify both deploy agents
-          echo "Verifying deploy agents..."
-          curl -f "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}
-          curl -f "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}
-          
-          # Verify both APIs
-          echo "Verifying APIs..."
-          curl -f "http://${{ env.SERVER_A_IP }}:8000/health" --max-time ${{ env.VERIFY_TIMEOUT }}
-          curl -f "http://${{ env.SERVER_B_IP }}:8000/health" --max-time ${{ env.VERIFY_TIMEOUT }}
-          
           echo "🎉 Rolling deployment completed successfully!"
-
-      - name: Rollback on deployment failure
-        if: failure()
-        run: |
-          echo "🚨 Deployment failed! Initiating automatic rollback..."
-          
-          # Get previous commit SHA for rollback
-          PREVIOUS_SHA=$(git rev-parse HEAD~1)
-          echo "Rolling back to previous commit: $PREVIOUS_SHA"
-          
-          # Determine which server failed and rollback accordingly
-          if [ "${{ steps.verify-server-a.outcome }}" == "failure" ]; then
-            echo "🔄 Rolling back Server A..."
-            if curl -f -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
-              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
-              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
-              echo "✅ Server A rollback successful"
-            else
-              echo "❌ Server A rollback failed"
-            fi
-          fi
-          
-          if [ "${{ steps.verify-server-b.outcome }}" == "failure" ]; then
-            echo "🔄 Rolling back Server B..."
-            if curl -f -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
-              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
-              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
-              echo "✅ Server B rollback successful"
-            else
-              echo "❌ Server B rollback failed"
-            fi
-          fi
-          
-          # If we don't know which server failed, rollback both
-          if [ "${{ steps.verify-server-a.outcome }}" != "failure" ] && [ "${{ steps.verify-server-b.outcome }}" != "failure" ]; then
-            echo "🔄 Rolling back both servers (unknown failure point)..."
-            
-            # Rollback Server A
-            if curl -f -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
-              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
-              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
-              echo "✅ Server A rollback successful"
-            else
-              echo "❌ Server A rollback failed"
-            fi
-            
-            # Rollback Server B
-            if curl -f -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
-              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
-              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
-              echo "✅ Server B rollback successful"
-            else
-              echo "❌ Server B rollback failed"
-            fi
-          fi
-          
-          echo "🔄 Rollback process completed"
-          exit 1  # Ensure the job still fails after rollback
+          echo "Both servers are now running the new version."

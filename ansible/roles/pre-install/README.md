@@ -17,23 +17,8 @@ Prepares system with Docker and common packages.
 - `dns_nameservers`: DNS nameservers list - multiple values: list of IP addresses (default: ["178.22.122.100"])
 - `reboot_after_upgrade`: Reboot after package upgrades - boolean: true/false (default: false)
 
-## Tags
-
-- `dns`: DNS configuration tasks
-- `dns-setter`: DNS setting tasks
-
 ## Task Files
 
 - `main.yaml`: Main pre-installation tasks
 - `dns-setter.yaml`: DNS configuration tasks
 - `docker.yaml`: Docker installation tasks
-
-## Usage
-
-```bash
-# Deploy complete infrastructure
-ansible-playbook -i inventories/hosts site.yaml --tags pre-install
-
-# Deploy specific components
-ansible-playbook -i inventories/hosts site.yaml --tags dns
-```
