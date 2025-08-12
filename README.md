@@ -31,9 +31,14 @@ ansible-playbook -i inventories/hosts site.yaml --tags deploy-agent
 - `deploy-agent/` - Deployment service
 - `ansible/` - Infrastructure automation
 
-## GitLab CI Variables Required
+## CI/CD Support
 
+This project supports both **GitLab CI** and **GitHub Actions** with identical functionality.
+
+### GitLab CI Variables Required
 Set these in GitLab CI/CD → Variables:
 - `DEPLOY_TOKEN`: Your deployment token
-- `SERVER_A_IP`: Override if different from default
-- `SERVER_B_IP`: Override if different from default
+
+### GitHub Actions Secrets Required  
+Set these in GitHub → Settings → Secrets and variables → Actions:
+- `DEPLOY_TOKEN`: Your deployment token
