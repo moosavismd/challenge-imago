@@ -22,7 +22,7 @@ common_packages:
   - software-properties-common
 configure_dns: true
 dns_nameservers:
-  - "178.22.122.100"
+  - "185.206.92.250"
 docker_install_method: "docker-ce"
 install_docker_compose: true
 
