@@ -41,19 +41,36 @@ jobs:
       - name: Test API endpoints
         run: |
           cd api-service
+          echo "Checking if port 8000 is available..."
+          if lsof -i :8000 >/dev/null 2>&1; then
+            echo "Port 8000 is already in use, killing existing processes..."
+            lsof -ti :8000 | xargs kill -9
+            sleep 2
+          fi
+          
           echo "Starting API server..."
-          python api-server.py &
+          python api-server.py > server.log 2>&1 &
           API_PID=$!
           
-          echo "Waiting for server to be ready..."
-          for i in {1..30}; do
-            if curl -f http://localhost:8000/health >/dev/null 2>&1; then
-              echo "Server is ready!"
-              break
-            fi
-            echo "Attempt $i/30: Server not ready yet..."
-            sleep 2
-          done
+          echo "Server PID: $API_PID"
+          echo "Waiting 5 seconds for server to start..."
+          sleep 5
+          
+          echo "Checking if server process is running..."
+          if ! ps -p $API_PID > /dev/null; then
+            echo "❌ Server process died"
+            echo "Server log:"
+            cat server.log
+            exit 1
+          fi
+          
+          echo "Checking if port 8000 is listening..."
+          if ! netstat -tlnp | grep :8000; then
+            echo "❌ Port 8000 not listening"
+            echo "Server log:"
+            cat server.log
+            exit 1
+          fi
           
           echo "Testing endpoints..."
           curl -f http://localhost:8000/health
