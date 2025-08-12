@@ -15,8 +15,8 @@ env:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
   # Deployment server configuration - can be overridden in GitHub Secrets
-  SERVER_A_IP: "188.121.101.29"
-  SERVER_B_IP: "37.32.8.38"
+  SERVER_A_IP: "37.32.15.192"
+  SERVER_B_IP: "188.121.102.61"
   DEPLOY_AGENT_PORT: "8080"
   DEPLOY_TIMEOUT: "60"
   VERIFY_TIMEOUT: "30"
