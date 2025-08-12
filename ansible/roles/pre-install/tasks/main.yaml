@@ -12,6 +12,10 @@
   when: upgrade_packages and ansible_pkg_mgr == 'apt'
   notify: reboot system
 
+# Flush handlers after upgrading packages 
+- name: Flush handlers after upgrading OS packages
+  meta: flush_handlers
+
 - name: Install common packages
   apt:
     name: "{{ common_packages }}"

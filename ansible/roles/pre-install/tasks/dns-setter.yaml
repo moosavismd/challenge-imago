@@ -4,6 +4,11 @@
   service_facts:
   tags: [dns, dns-setter]
 
+- name: Check if systemd-resolved is available
+  set_fact:
+    has_systemd_resolved: "'systemd-resolved.service' in ansible_facts.services"
+  tags: [dns, dns-setter]
+
 - name: Set DNS in /etc/systemd/resolved.conf
   ini_file:
     path: /etc/systemd/resolved.conf
@@ -12,7 +17,7 @@
     value: "{{ dns_nameservers | join(' ') }}"
     no_extra_spaces: true
     backup: yes
-  when: "'systemd-resolved.service' in ansible_facts.services"
+  when: has_systemd_resolved
   notify: restart systemd-resolved
   tags: [dns, dns-setter]
 
@@ -21,21 +26,7 @@
     name: systemd-resolved
     enabled: yes
     state: started
-  when: "'systemd-resolved.service' in ansible_facts.services"
-  tags: [dns, dns-setter]
-
-- name: Fallback - write /etc/resolved.conf directly
-  copy:
-    dest: /etc/resolv.conf
-    content: |
-      {% for ns in dns_nameservers %}
-      nameserver {{ ns }}
-      {% endfor %}
-    owner: root
-    group: root
-    mode: '0644'
-    backup: yes
-  when: "'systemd-resolved.service' not in ansible_facts.services"
+  when: has_systemd_resolved
   tags: [dns, dns-setter]
 
 

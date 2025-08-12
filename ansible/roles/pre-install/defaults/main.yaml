@@ -23,4 +23,7 @@ common_packages:
 # DNS configuration
 configure_dns: false
 dns_nameservers:
-  - "185.206.92.250"
+  - "178.22.122.100"
+
+# System behavior
+reboot_after_upgrade: false

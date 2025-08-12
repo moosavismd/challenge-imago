@@ -1,20 +1,9 @@
 ---
 # Pre-install role handlers
-- name: restart docker
-  systemd:
-    name: docker
-    state: restarted
-  listen: "restart docker"
-
-- name: reload systemd
-  systemd:
-    daemon_reload: true
-  listen: "reload systemd"
-
 - name: reboot system
   reboot:
     msg: "Reboot initiated by pre-install role after package upgrades"
-  when: reboot_after_upgrade | default(false)
+  when: reboot_after_upgrade
 
 - name: restart systemd-resolved
   systemd:
