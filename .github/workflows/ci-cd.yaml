@@ -74,8 +74,9 @@ jobs:
           curl -f http://localhost:8000/cons
           
           echo "Stopping server..."
-          kill $API_PID
-          wait $API_PID 2>/dev/null || true
+          # Find and kill the Python API server process
+          pkill -f "python api-server.py" || true
+          echo "✅ Server stopped"
 
       - name: Test Docker build
         run: |
