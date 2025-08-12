@@ -12,5 +12,5 @@
       add_header X-Frame-Options DENY;
       add_header X-Content-Type-Options nosniff;
       server_tokens off;
-    create: yes
+    create: true
   notify: reload nginx

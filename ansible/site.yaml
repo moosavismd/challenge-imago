@@ -1,8 +1,7 @@
 ---
 - name: Site playbook for server setup
   hosts: all
-  become: yes
-  tags: [always]
+  become: true
   roles:
     - role: pre-install
       when: install_pre_install | default(false)
@@ -11,7 +10,14 @@
 
 - name: NGINX reverse proxy setup
   hosts: webservers
-  become: yes
+  become: true
   tags: [nginx, webservers]
   roles:
     - nginx
+
+- name: Deploy Agent setup
+  hosts: webservers
+  become: true
+  tags: [deploy-agent, webservers]
+  roles:
+    - deploy-agent

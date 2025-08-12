@@ -1,36 +1,16 @@
 # Pre-install Role
 
-System preparation role for package management and Docker installation.
-
-## Requirements
-
-- Ansible 2.9+
-- Ubuntu/Debian targets
-- Root/sudo privileges
+Prepares system with Docker and common packages.
 
 ## Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `docker_version` | `"latest"` | Docker version to install |
-| `update_package_cache` | `true` | Update package cache |
-| `upgrade_packages` | `false` | Upgrade existing packages |
-| `configure_dns` | `false` | Configure DNS settings |
+- `docker_install_method`: Docker installation method
+- `upgrade_packages`: Upgrade OS packages
+- `configure_dns`: Configure DNS settings
+- `common_packages`: List of packages to install
 
 ## Usage
 
-```yaml
-- hosts: servers
-  roles:
-    - pre-install
-  vars:
-    docker_version: "24.0.5"
-    upgrade_packages: true
+```bash
+ansible-playbook -i inventories/hosts site.yaml --tags pre-install
 ```
-
-## Features
-
-- **Package management** (apt cache, upgrades)
-- **Docker installation** (CE version)
-- **DNS configuration** (systemd-resolved)
-- **System preparation** for other roles

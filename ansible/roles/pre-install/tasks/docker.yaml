@@ -37,7 +37,7 @@
 
 - name: Install Docker Compose plugin (conditional)
   apt:
-    name: "{{ docker_compose_package_name }}"
+    name: docker-compose-plugin
     state: present
   when: install_docker_compose
 

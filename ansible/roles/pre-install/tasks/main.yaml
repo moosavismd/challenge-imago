@@ -2,13 +2,13 @@
 # Pre-install role tasks
 - name: Update package cache
   apt:
-    update_cache: "{{ update_package_cache }}"
+    update_cache: true
     cache_valid_time: "{{ apt_cache_valid_time }}"
   when: update_package_cache
 
 - name: Upgrade OS packages
   apt:
-    upgrade: "{{ apt_upgrade_mode | default('yes') }}"
+    upgrade: true
   when: upgrade_packages and ansible_pkg_mgr == 'apt'
   notify: reboot system
 
@@ -22,7 +22,15 @@
   include_tasks: dns-setter.yaml
   when: configure_dns
 
+# Flush handlers after DNS configuration
+- name: Flush handlers after DNS configuration
+  meta: flush_handlers
+
 # Include Docker installation tasks
 - name: Include Docker installation tasks
   include_tasks: docker.yaml
   when: docker_install_method is defined
+
+# Flush all handlers at the end
+- name: Flush all handlers
+  meta: flush_handlers

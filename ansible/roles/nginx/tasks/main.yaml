@@ -1,6 +1,17 @@
 ---
 # NGINX role tasks
 
+- name: Create project base directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ project_base_dir }}"
+    - "{{ project_nginx_dir }}"
+
 - name: Ensure necessary directories exist
   file:
     path: "{{ item }}"
@@ -28,7 +39,7 @@
   community.docker.docker_container:
     name: "{{ nginx_container_name }}"
     image: "{{ nginx_image }}"
-    restart_policy: always
+    restart_policy: "always"
     state: started
     network_mode: "{{ nginx_network_mode }}"
     volumes: "{{ nginx_volumes }}"

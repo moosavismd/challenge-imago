@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README*.md
+*.md
+
+# Ansible files
+ansible/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore

@@ -1,0 +1,11 @@
+---
+# Deploy Agent Role Handlers
+
+- name: Restart deploy agent via Compose v2
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_agent_dir }}"
+    state: restarted
+    build: never        # or "always" / "policy" depending on your intent
+    pull: "missing"
+  listen: "restart deploy agent"
+

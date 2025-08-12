@@ -8,23 +8,22 @@
 
 - name: reload systemd
   systemd:
-    daemon_reload: yes
+    daemon_reload: true
   listen: "reload systemd"
 
 - name: reboot system
   reboot:
     msg: "Reboot initiated by pre-install role after package upgrades"
-    reboot_timeout: "{{ reboot_timeout }}"
   when: reboot_after_upgrade | default(false)
 
 - name: restart systemd-resolved
   systemd:
     name: systemd-resolved
     state: restarted
-    enabled: yes
+    enabled: true
   listen: "restart systemd-resolved"
 
 - name: apt update cache
   apt:
-    update_cache: yes
+    update_cache: true
   listen: "apt update cache"

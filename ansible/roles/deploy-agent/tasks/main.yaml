@@ -1,0 +1,87 @@
+---
+# Deploy Agent Role Tasks
+
+- name: Create project base directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ project_base_dir }}"
+    - "{{ project_api_dir }}"
+    - "{{ project_deploy_agent_dir }}"
+    - "{{ project_nginx_dir }}"
+
+- name: Ensure deploy agent directory exists
+  file:
+    path: "{{ deploy_agent_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy deploy agent files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ deploy_agent_dir }}/"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - agent.py
+    - requirements.txt
+    - Dockerfile
+    - docker-compose.yml
+
+- name: Copy API server docker-compose
+  copy:
+    src: "../../../api-service/docker-compose.yml"
+    dest: "{{ project_api_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create deploy agent environment file
+  template:
+    src: env.j2
+    dest: "{{ deploy_agent_dir }}/.env"
+    owner: root
+    group: root
+    mode: '0600'
+
+# Temporary task: Build deploy agent Docker image on host
+- name: Build deploy agent Docker image on host
+  community.docker.docker_image:
+    name: "{{ deploy_agent_image_name | default('deploy-agent') }}"
+    tag: "{{ deploy_agent_image_tag | default('latest') }}"
+    path: "{{ deploy_agent_dir }}"
+    build_args:
+      DEPLOY_TOKEN: "{{ deploy_agent_token }}"
+    force_source: true
+  tags: [build-image, deploy-agent]
+  when: build_deploy_agent_image | default(false)
+  notify: restart deploy agent
+
+- name: Build (if needed) and start deploy agent
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_agent_dir }}"
+    state: present
+    build: "always"
+    pull: "missing"
+  notify: restart deploy agent
+
+- name: Wait for deploy agent to be ready
+  uri:
+    url: "http://localhost:8080/health"
+    status_code: [200]
+    timeout: 30
+  register: health_check
+  retries: 5
+  delay: 10
+  until: health_check.status == 200
+
+# Flush handlers to ensure deploy agent is restarted if needed
+- name: Flush handlers
+  meta: flush_handlers

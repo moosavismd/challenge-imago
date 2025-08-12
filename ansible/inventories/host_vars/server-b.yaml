@@ -1,9 +1,7 @@
 ---
-# Host-specific variables for web-server-01
-ansible_host: 37.32.25.95
-ansible_user: ubuntu
+# Host-specific variables for server-b
 
-# Role execution control (host-specific overrides)
+# Role execution control
 install_pre_install: true
 install_zabbix: true
 
@@ -11,4 +9,3 @@ install_zabbix: true
 upgrade_packages: true
 reboot_after_upgrade: true
 configure_dns: true
-

@@ -1,6 +1,10 @@
 ---
 # NGINX role defaults
 
+# Project directory structure defaults
+project_base_dir: "/opt/media-service"
+project_nginx_dir: "{{ project_base_dir }}/nginx"
+
 # SSL Configuration
 ssl_type: "selfsigned"  # only selfsigned available
 
@@ -10,17 +14,19 @@ nginx_container_name: "nginx"
 nginx_network_mode: "host"  # Use host networking for localhost access
 
 # Base Directory Configuration
-base_ssl_dir: "/etc/nginx/ssl"
-base_nginx_conf_dir: "/etc/nginx/conf.d"
+base_ssl_dir: "{{ project_nginx_dir }}/ssl"
+base_nginx_conf_dir: "{{ project_nginx_dir }}/conf.d"
 
 # NGINX volumes (using base paths)
 nginx_volumes:
   - "{{ base_nginx_conf_dir }}:/etc/nginx/conf.d:ro"
   - "{{ base_ssl_dir }}:/etc/nginx/ssl:ro"
 
-# API Proxy Configuration - List of APIs to proxy
+# Default virtual host configuration
 nginx_vhosts:
-  # Example structure:
-  # - server_name: "api.example.com"
-  #   backend_url: "http://localhost:8000"  # Your API backend URL
-  #   ssl_type: "selfsigned"
+  - server_name: "api.media-service.local"
+    backend_url: "http://localhost:8000"
+    ssl_type: "{{ ssl_type }}"
+  - server_name: "media.media-service.local"
+    backend_url: "http://localhost:8000"
+    ssl_type: "{{ ssl_type }}"

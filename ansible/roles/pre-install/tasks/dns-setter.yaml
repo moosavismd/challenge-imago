@@ -2,27 +2,29 @@
 # DNS configuration tasks (included conditionally from main.yml)
 - name: Gather service facts
   service_facts:
+  tags: [dns, dns-setter]
 
-- name: Configure DNS via systemd-resolved (preferred)
-  block:
-    - name: Set DNS in /etc/systemd/resolved.conf
-      ini_file:
-        path: /etc/systemd/resolved.conf
-        section: Resolve
-        option: DNS
-        value: "{{ dns_nameservers | join(' ') }}"
-        no_extra_spaces: true
-        backup: yes
-      notify: restart systemd-resolved
-
-    - name: Ensure systemd-resolved is enabled and started
-      systemd:
-        name: systemd-resolved
-        enabled: yes
-        state: started
+- name: Set DNS in /etc/systemd/resolved.conf
+  ini_file:
+    path: /etc/systemd/resolved.conf
+    section: Resolve
+    option: DNS
+    value: "{{ dns_nameservers | join(' ') }}"
+    no_extra_spaces: true
+    backup: yes
   when: "'systemd-resolved.service' in ansible_facts.services"
+  notify: restart systemd-resolved
+  tags: [dns, dns-setter]
 
-- name: Fallback - write /etc/resolv.conf directly
+- name: Ensure systemd-resolved is enabled and started
+  systemd:
+    name: systemd-resolved
+    enabled: yes
+    state: started
+  when: "'systemd-resolved.service' in ansible_facts.services"
+  tags: [dns, dns-setter]
+
+- name: Fallback - write /etc/resolved.conf directly
   copy:
     dest: /etc/resolv.conf
     content: |
@@ -34,5 +36,6 @@
     mode: '0644'
     backup: yes
   when: "'systemd-resolved.service' not in ansible_facts.services"
+  tags: [dns, dns-setter]
 
 

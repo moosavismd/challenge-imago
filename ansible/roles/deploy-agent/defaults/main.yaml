@@ -1,0 +1,29 @@
+---
+# Deploy Agent Role Defaults
+
+# Project directory structure defaults
+project_base_dir: "/opt/media-service"
+project_api_dir: "{{ project_base_dir }}/api"
+project_deploy_agent_dir: "{{ project_base_dir }}/deploy-agent"
+project_nginx_dir: "{{ project_base_dir }}/nginx"
+
+# Deploy agent directory configuration
+deploy_agent_dir: "{{ project_deploy_agent_dir }}"
+
+# Deploy agent configuration
+deploy_agent_port: 8080
+deploy_agent_token: "{{ vault_deploy_token | default('my-secret-token') }}"
+
+# Docker compose configuration
+compose_file: "docker-compose.yml"
+compose_dir: "{{ project_api_dir }}"
+
+# Docker image build configuration (temporary)
+deploy_agent_image_name: "deploy-agent"
+deploy_agent_image_tag: "latest"
+build_deploy_agent_image: false  # Set to true to build image on host
+
+# Registry configuration
+registry_image: "registry.gitlab.com/moosavi.smd/api-server"
+
+
