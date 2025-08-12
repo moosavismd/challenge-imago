@@ -173,7 +173,7 @@ jobs:
       - name: Deploy to Server A
         id: deploy-server-a
         run: |
-          echo "Deploying to Server A..."
+          echo "🚀 Deploying to Server A..."
           response=$(curl -s -w "\n%{http_code}" -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
             -H "Content-Type: application/json" \
@@ -193,10 +193,44 @@ jobs:
             echo "✅ Server A deployment successful"
           fi
 
+      - name: Wait for Server A deployment
+        run: |
+          echo "⏳ Waiting for Server A deployment to stabilize..."
+          sleep 30
+
+      - name: Verify Server A deployment
+        id: verify-server-a
+        run: |
+          echo "🔍 Verifying Server A deployment..."
+          
+          # Wait for deploy agent to be ready
+          for i in {1..10}; do
+            if curl -f "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time 10; then
+              echo "✅ Server A deploy agent is ready"
+              break
+            else
+              echo "⏳ Waiting for Server A deploy agent... (attempt $i/10)"
+              sleep 5
+            fi
+          done
+          
+          # Test API health on Server A
+          for i in {1..10}; do
+            if curl -f "http://${{ env.SERVER_A_IP }}:8000/health" --max-time 10; then
+              echo "✅ Server A API is healthy"
+              break
+            else
+              echo "⏳ Waiting for Server A API... (attempt $i/10)"
+              sleep 5
+            fi
+          done
+          
+          echo "🎉 Server A deployment verified successfully!"
+
       - name: Deploy to Server B
         id: deploy-server-b
         run: |
-          echo "Deploying to Server B..."
+          echo "🚀 Deploying to Server B..."
           response=$(curl -s -w "\n%{http_code}" -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/deploy" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
             -H "Content-Type: application/json" \
@@ -216,65 +250,117 @@ jobs:
             echo "✅ Server B deployment successful"
           fi
 
-      - name: Wait for deployments
+      - name: Wait for Server B deployment
         run: |
-          echo "Waiting for deployments to complete..."
+          echo "⏳ Waiting for Server B deployment to stabilize..."
           sleep 30
 
-      - name: Verify deployments
-        id: verify-deployments
+      - name: Verify Server B deployment
+        id: verify-server-b
         run: |
-          echo "Verifying deployments..."
+          echo "🔍 Verifying Server B deployment..."
           
-          # Verify Server A
-          echo "Verifying Server A..."
-          if ! curl -f "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}; then
-            echo "❌ Server A verification failed"
-            exit 1
-          fi
-          echo "✅ Server A verification successful"
+          # Wait for deploy agent to be ready
+          for i in {1..10}; do
+            if curl -f "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time 10; then
+              echo "✅ Server B deploy agent is ready"
+              break
+            else
+              echo "⏳ Waiting for Server B deploy agent... (attempt $i/10)"
+              sleep 5
+            fi
+          done
           
-          # Verify Server B
-          echo "Verifying Server B..."
-          if ! curl -f "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}; then
-            echo "❌ Server B verification failed"
-            exit 1
-          fi
-          echo "✅ Server B verification successful"
+          # Test API health on Server B
+          for i in {1..10}; do
+            if curl -f "http://${{ env.SERVER_B_IP }}:8000/health" --max-time 10; then
+              echo "✅ Server B API is healthy"
+              break
+            else
+              echo "⏳ Waiting for Server B API... (attempt $i/10)"
+              sleep 5
+            fi
+          done
           
-          echo "🎉 All deployments verified successfully!"
+          echo "🎉 Server B deployment verified successfully!"
+
+      - name: Final verification of both servers
+        run: |
+          echo "🔍 Final verification of both servers..."
+          
+          # Verify both deploy agents
+          echo "Verifying deploy agents..."
+          curl -f "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}
+          curl -f "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/status" --max-time ${{ env.VERIFY_TIMEOUT }}
+          
+          # Verify both APIs
+          echo "Verifying APIs..."
+          curl -f "http://${{ env.SERVER_A_IP }}:8000/health" --max-time ${{ env.VERIFY_TIMEOUT }}
+          curl -f "http://${{ env.SERVER_B_IP }}:8000/health" --max-time ${{ env.VERIFY_TIMEOUT }}
+          
+          echo "🎉 Rolling deployment completed successfully!"
 
       - name: Rollback on deployment failure
-        if: failure() && steps.verify-deployments.outcome == 'failure'
+        if: failure()
         run: |
-          echo "🚨 Deployment verification failed! Initiating automatic rollback..."
+          echo "🚨 Deployment failed! Initiating automatic rollback..."
           
           # Get previous commit SHA for rollback
           PREVIOUS_SHA=$(git rev-parse HEAD~1)
           echo "Rolling back to previous commit: $PREVIOUS_SHA"
           
-          # Rollback Server A
-          echo "Rolling back Server A..."
-          if curl -f -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
-            --max-time ${{ env.DEPLOY_TIMEOUT }}; then
-            echo "✅ Server A rollback successful"
-          else
-            echo "❌ Server A rollback failed"
+          # Determine which server failed and rollback accordingly
+          if [ "${{ steps.verify-server-a.outcome }}" == "failure" ]; then
+            echo "🔄 Rolling back Server A..."
+            if curl -f -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
+              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
+              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
+              echo "✅ Server A rollback successful"
+            else
+              echo "❌ Server A rollback failed"
+            fi
           fi
           
-          # Rollback Server B
-          echo "Rolling back Server B..."
-          if curl -f -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
-            --max-time ${{ env.DEPLOY_TIMEOUT }}; then
-            echo "✅ Server B rollback successful"
-          else
-            echo "❌ Server B rollback failed"
+          if [ "${{ steps.verify-server-b.outcome }}" == "failure" ]; then
+            echo "🔄 Rolling back Server B..."
+            if curl -f -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
+              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
+              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
+              echo "✅ Server B rollback successful"
+            else
+              echo "❌ Server B rollback failed"
+            fi
+          fi
+          
+          # If we don't know which server failed, rollback both
+          if [ "${{ steps.verify-server-a.outcome }}" != "failure" ] && [ "${{ steps.verify-server-b.outcome }}" != "failure" ]; then
+            echo "🔄 Rolling back both servers (unknown failure point)..."
+            
+            # Rollback Server A
+            if curl -f -X POST "http://${{ env.SERVER_A_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
+              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
+              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
+              echo "✅ Server A rollback successful"
+            else
+              echo "❌ Server A rollback failed"
+            fi
+            
+            # Rollback Server B
+            if curl -f -X POST "http://${{ env.SERVER_B_IP }}:${{ env.DEPLOY_AGENT_PORT }}/rollback" \
+              -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"previous_tag\": \"$PREVIOUS_SHA\"}" \
+              --max-time ${{ env.DEPLOY_TIMEOUT }}; then
+              echo "✅ Server B rollback successful"
+            else
+              echo "❌ Server B rollback failed"
+            fi
           fi
           
           echo "🔄 Rollback process completed"
