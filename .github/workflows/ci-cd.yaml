@@ -147,16 +147,85 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Verify registry connectivity
+        run: |
+          echo "🔍 Verifying registry connectivity..."
+          
+          # Test registry access
+          if ! curl -f "https://ghcr.io/v2/" --max-time 30; then
+            echo "❌ Cannot access GitHub Container Registry"
+            exit 1
+          fi
+          
+          # Test authentication
+          if ! docker pull hello-world:latest; then
+            echo "❌ Docker pull test failed"
+            exit 1
+          fi
+          
+          echo "✅ Registry connectivity verified"
+
       - name: Build and push Docker image
         run: |
           cd api-service
+          echo "🐳 Building Docker image..."
+          
+          # Clean up any existing images to avoid conflicts
+          docker system prune -f
+          
           # Build with commit SHA tag
-          docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
+          echo "Building image with tag: ${{ github.sha }}"
+          if ! docker build --no-cache -t ghcr.io/${{ github.repository }}:${{ github.sha }} .; then
+            echo "❌ Docker build failed"
+            exit 1
+          fi
+          
           # Tag as latest
-          docker tag ghcr.io/${{ github.repository }}:${{ github.sha }} ghcr.io/${{ github.repository }}:latest
+          echo "Tagging as latest..."
+          if ! docker tag ghcr.io/${{ github.repository }}:${{ github.sha }} ghcr.io/${{ github.repository }}:latest; then
+            echo "❌ Docker tag failed"
+            exit 1
+          fi
+          
+          # Push with retry logic
+          echo "Pushing image to registry..."
+          
+          # Function to push with retries
+          push_with_retry() {
+            local image=$1
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Push attempt $attempt/$max_attempts for $image"
+              if docker push "$image"; then
+                echo "✅ Successfully pushed $image"
+                return 0
+              else
+                echo "❌ Push attempt $attempt failed for $image"
+                if [ $attempt -eq $max_attempts ]; then
+                  echo "❌ All push attempts failed for $image"
+                  return 1
+                fi
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
+                attempt=$((attempt + 1))
+              fi
+            done
+          }
+          
           # Push both tags
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository }}:latest
+          if ! push_with_retry "ghcr.io/${{ github.repository }}:${{ github.sha }}"; then
+            echo "❌ Failed to push SHA tag"
+            exit 1
+          fi
+          
+          if ! push_with_retry "ghcr.io/${{ github.repository }}:latest"; then
+            echo "❌ Failed to push latest tag"
+            exit 1
+          fi
+          
+          echo "🎉 All images pushed successfully!"
 
   deploy:
     runs-on: ubuntu-latest
