@@ -4,8 +4,8 @@ stages:
   - deploy
 
 variables:
-  SERVER_A_IP: "37.32.13.155"
-  SERVER_B_IP: "188.121.101.142"
+  SERVER_A_IP: "130.185.121.228"
+  SERVER_B_IP: "130.185.123.76"
   DEPLOY_AGENT_PORT: "8080"
 
 test:

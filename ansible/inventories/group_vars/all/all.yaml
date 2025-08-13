@@ -20,9 +20,9 @@ common_packages:
   - gnupg
   - lsb-release
   - software-properties-common
-configure_dns: true
+configure_dns: false
 dns_nameservers:
-  - "185.206.92.250"
+  - "185.51.200.2"
 docker_install_method: "docker-ce"
 install_docker_compose: true
 
